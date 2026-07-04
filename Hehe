@@ -1,0 +1,26 @@
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/turtle"))()
+local window = library:Window("abc xyz")
+
+window:Button("CFrame", function()
+	loadstring(game:HttpGet("hhttps://raw.githubusercontent.com/bao8jl/Tool/main/Cframe"))()
+end)
+
+window:Button("Infinite Yield", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+end)
+
+window:Button("RemoteSpy 1", function()
+	local owner = "Upbolt"
+	local branch = "revision"
+
+	local function webImport(file)
+		return loadstring(game:HttpGetAsync(("https://raw.githubusercontent.com/%s/Hydroxide/%s/%s.lua"):format(owner, branch, file)), file .. '.lua')()
+	end
+
+	webImport("init")
+	webImport("ui/main")
+end)
+
+window:Button("RemoteSpy 2", function()
+	loadstring(game:HttpGet("https://github.com/notpoiu/cobalt/releases/latest/download/Cobalt.luau"))()
+end)
