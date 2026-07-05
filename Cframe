@@ -1,5 +1,5 @@
 local plr = game.Players.LocalPlayer
-local root = plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+local root = plr and plr.Character and plr.Character:FindFirstChild("LowerTorso")
 
 if root then
     local output1 = root.CFrame
