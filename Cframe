@@ -1,8 +1,8 @@
 local plr = game.Players.LocalPlayer
-local torso = plr and plr.Character and plr.Character:FindFirstChild("LowerTorso")
+local rootpart = plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
 
-if torso then
-    local output1 = torso.CFrame
+if rootpart then
+    local output1 = rootpart.CFrame
     local output2 = string.format("CFrame.new(%.1f, %.1f, %.1f, 1, 0, 0, 0, 1, 0, 0, 0, 1)", output1.Position.X, output1.Position.Y, output1.Position.Z)
 
     setclipboard(output2)
