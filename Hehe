@@ -1,15 +1,14 @@
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/turtle"))()
-local window = library:Window("abc xyz")
+local window1 = library:Window("abc xyz 1")
+local window2 = library:Window("abc xyz 2")
 
-window:Button("CFrame", function()
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/bao8jl/Tool/main/Cframe"))()
-end)
+local plr = game.Players.LocalPlayer
 
-window:Button("Infinite Yield", function()
+window1:Button("Infinite Yield", function()
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 end)
 
-window:Button("RemoteSpy 1", function()
+window1:Button("RemoteSpy 1", function()
 	local owner = "Upbolt"
 	local branch = "revision"
 
@@ -21,6 +20,27 @@ window:Button("RemoteSpy 1", function()
 	webImport("ui/main")
 end)
 
-window:Button("RemoteSpy 2", function()
+window1:Button("RemoteSpy 2", function()
 	loadstring(game:HttpGet("https://github.com/notpoiu/cobalt/releases/latest/download/Cobalt.luau"))()
+end)
+
+window2:Button("CFrame 1", function()
+	local rootpart = plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+
+	if rootpart then
+		local output1 = rootpart.CFrame
+		local output2 = string.format("CFrame.new(%.1f, %.1f, %.1f, 1, 0, 0, 0, 1, 0, 0, 0, 1)", output1.Position.X, output1.Position.Y, output1.Position.Z)
+
+		setclipboard(output2)
+	end
+end)
+
+window2:Box("CFrame 2", function(input1, input2)
+	if not input1 then return end
+
+	local x, y, z = string.match(input1, "CFrame%.new%(([%d%.%-]+),%s*([%d%.%-]+),%s*([%d%.%-]+)")
+
+	if x and y and z then
+		plr.Character.HumanoidRootPart.CFrame = CFrame.new(tonumber(x), tonumber(y), tonumber(z))
+	end
 end)
