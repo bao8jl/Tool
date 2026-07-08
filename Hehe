@@ -29,7 +29,7 @@ window2:Button("CFrame 1", function()
 
 	if rootpart then
 		local output1 = rootpart.CFrame
-		local output2 = string.format("CFrame.new(%.1f, %.1f, %.1f, 1, 0, 0, 0, 1, 0, 0, 0, 1)", output1.Position.X, output1.Position.Y, output1.Position.Z)
+		local output2 = string.format("CFrame.new(%.1f, %.1f, %.1f)", output1.Position.X, output1.Position.Y, output1.Position.Z)
 
 		setclipboard(output2)
 	end
