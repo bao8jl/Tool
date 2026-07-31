@@ -1,54 +1,90 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/turtle"))()
-local window1 = library:Window("abc xyz 1")
-local window2 = library:Window("abc xyz 2")
+local library = loadstring(game:HttpGet('https://raw.githubusercontent.com/liebertsx/Tora-Library/main/src/librarynew', true))()
+
+local window1 = library:CreateWindow('Tools')
+local window2 = library:CreateWindow('CFrame')
+
+local folder1 = window1:AddFolder('Scripts')
+local folder2 = window2:AddFolder('CFrame')
 
 local plr = game.Players.LocalPlayer
 
-window1:Button("Infinite Yield", function()
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-end)
+folder1:AddButton({
+	text = 'Infinite Yield',
+	flag = 'btn_infiniteyield',
+	callback = function()
+		loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+	end,
+})
 
-window1:Button("RemoteSpy 1", function()
-	local owner = "Upbolt"
-	local branch = "revision"
+folder1:AddButton({
+	text = 'RemoteSpy 1',
+	flag = 'btn_remotespy1',
+	callback = function()
+		local owner = 'Upbolt'
+		local branch = 'revision'
 
-	local function webImport(file)
-		return loadstring(game:HttpGetAsync(("https://raw.githubusercontent.com/%s/Hydroxide/%s/%s.lua"):format(owner, branch, file)), file .. '.lua')()
-	end
+		local function webImport(file)
+			return loadstring(game:HttpGetAsync(('https://raw.githubusercontent.com/%s/Hydroxide/%s/%s.lua'):format(owner, branch, file)), file .. '.lua')()
+		end
 
-	webImport("init")
-	webImport("ui/main")
-end)
+		webImport('init')
+		webImport('ui/main')
+	end,
+})
 
-window1:Button("RemoteSpy 2", function()
-	loadstring(game:HttpGet("https://github.com/notpoiu/cobalt/releases/latest/download/Cobalt.luau"))()
-end)
+folder1:AddButton({
+	text = 'RemoteSpy 2',
+	flag = 'btn_remotespy2',
+	callback = function()
+		loadstring(game:HttpGet('https://github.com/notpoiu/cobalt/releases/latest/download/Cobalt.luau'))()
+	end,
+})
 
-window1:Button("Roblox Executor Mcp", function()
-	getgenv().BridgeURL = "localhost:16384"        
-	getgenv().DisableWebSocket = true           
-	getgenv().DisableInitialScriptDecompMapping = false   
+folder1:AddButton({
+	text = 'Roblox Executor MCP',
+	flag = 'btn_mcp',
+	callback = function()
+		getgenv().BridgeURL = 'localhost:16384'
+		getgenv().DisableWebSocket = true
+		getgenv().DisableInitialScriptDecompMapping = false
 
-	loadstring(game:HttpGet("http://" .. getgenv().BridgeURL or "localhost:16384" .. "/script.luau"))()
-end)
+		loadstring(game:HttpGet('http://' .. (getgenv().BridgeURL or 'localhost:16384') .. '/script.luau'))()
+	end,
+})
 
-window2:Button("CFrame 1", function()
-	local rootpart = plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+folder2:AddButton({
+	text = 'Copy CFrame',
+	flag = 'btn_copy_cframe',
+	callback = function()
+		local char = plr and plr.Character
+		local rootpart = char and char:FindFirstChild('HumanoidRootPart')
 
-	if rootpart then
-		local output1 = rootpart.CFrame
-		local output2 = string.format("CFrame.new(%.1f, %.1f, %.1f)", output1.Position.X, output1.Position.Y, output1.Position.Z)
+		if rootpart then
+			local pos = rootpart.CFrame.Position
+			setclipboard(('CFrame.new(%.1f, %.1f, %.1f)'):format(pos.X, pos.Y, pos.Z))
+		end
+	end,
+})
 
-		setclipboard(output2)
-	end
-end)
+folder2:AddList({
+	text = 'Teleport CFrame',
+	values = {},
+	flag = 'tp_cframe',
+	open = false,
+	callback = function(value)
+		if not value then return end
 
-window2:Box("CFrame 2", function(input1, input2)
-	if not input1 then return end
+		local x, y, z = string.match(value, 'CFrame%.new%(([%d%.%-]+),%s*([%d%.%-]+),%s*([%d%.%-]+)')
 
-	local x, y, z = string.match(input1, "CFrame%.new%(([%d%.%-]+),%s*([%d%.%-]+),%s*([%d%.%-]+)")
+		if x and y and z then
+			local char = plr and plr.Character
+			local rootpart = char and char:FindFirstChild('HumanoidRootPart')
 
-	if x and y and z then
-		plr.Character.HumanoidRootPart.CFrame = CFrame.new(tonumber(x), tonumber(y), tonumber(z))
-	end
-end)
+			if rootpart then
+				rootpart.CFrame = CFrame.new(tonumber(x), tonumber(y), tonumber(z))
+			end
+		end
+	end,
+})
+
+library:Init()
