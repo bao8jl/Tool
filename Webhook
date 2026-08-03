@@ -51,5 +51,6 @@ function Webhook.CreateMessage(Url, Username, Content)
 	return webhook
 end
 
-getgenv().Webhook = Webhook
 return Webhook
+
+getgenv().Webhook = Webhook
