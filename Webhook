@@ -45,7 +45,7 @@ function Webhook.CreateMessage(Url, Username, Content)
 
 		return embed
 	end
-	function  webhook:SendMessage()
+	function webhook:SendMessage()
 		send()
 	end
 	return webhook
