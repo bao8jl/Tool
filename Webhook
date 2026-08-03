@@ -4,6 +4,10 @@ local HttpService = cloneref(game:GetService("HttpService"))
 local Request = request or httprequest or http_request
 
 function Webhook.CreateMessage(Url, Username, Content)
+	if type(Url) ~= "string" or Url == "" then
+		return nil
+	end
+
 	local data = {
 		username = Username or "",
 		content = Content or "",
@@ -11,12 +15,18 @@ function Webhook.CreateMessage(Url, Username, Content)
 	}
 
 	local function send()
-		Request({
-			Url = Url,
-			Method = "POST",
-			Headers = {["Content-Type"] = "application/json"},
-			Body = HttpService:JSONEncode(data)
-		})
+		local ok, err = pcall(function()
+			Request({
+				Url = Url,
+				Method = "POST",
+				Headers = {["Content-Type"] = "application/json"},
+				Body = HttpService:JSONEncode(data)
+			})
+		end)
+
+		if not ok then
+			warn("[Webhook] Send failed:", err)
+		end
 	end
 
 	local webhook = {}
@@ -45,12 +55,13 @@ function Webhook.CreateMessage(Url, Username, Content)
 
 		return embed
 	end
+
 	function webhook:SendMessage()
 		send()
 	end
+
 	return webhook
 end
 
-return Webhook
-
 getgenv().Webhook = Webhook
+return Webhook
