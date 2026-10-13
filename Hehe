@@ -4,6 +4,16 @@ local window2 = library:Window("abc xyz 2")
 
 local plr = game.Players.LocalPlayer
 
+window1:Button("Decompiler", function()
+	local Ok, Source = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/taze292/taze-decompiler/v0.2.0/tools/Decompile.luau")
+	if not Ok or type(Source) ~= "string" then return end
+
+	local Chunk = loadstring(Source)
+
+	if type(Chunk) ~= "function" then return end
+	pcall(Chunk)
+end)
+
 window1:Button("Infinite Yield", function()
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 end)
@@ -25,11 +35,12 @@ window1:Button("RemoteSpy 2", function()
 end)
 
 window1:Button("Roblox Executor Mcp", function()
-	getgenv().BridgeURL = "localhost:16384"        
-	getgenv().DisableWebSocket = true           
-	getgenv().DisableInitialScriptDecompMapping = false   
+	while not getgenv().MCP_Loaded do
+		local bridgeUrl = getgenv().BridgeURL or "localhost:16384"
+		pcall(function() loadstring(game:HttpGet("http://" .. bridgeUrl .. "/script.luau"))() end)
 
-	loadstring(game:HttpGet("http://" .. getgenv().BridgeURL or "localhost:16384" .. "/script.luau"))()
+		task.wait(0.15)
+	end
 end)
 
 window2:Button("CFrame 1", function()
