@@ -1,65 +1,275 @@
-local library = loadstring(game:HttpGet("https://gachi.gay/G0qn6d"))()
-local window1 = library:Window("abc xyz 1")
-local window2 = library:Window("abc xyz 2")
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bao8jl/Library/main/Turtle.lua"))()
+local ToolsWindow = Library:Window("Tools")
+local MovementWindow = Library:Window("Movement")
+local ServerWindow = Library:Window("Server")
 
-local plr = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
+local UserInputService = game:GetService("UserInputService")
+local Bridge = false
+local ServerHopping = false
+local FlyToggle
+local FlyState
+local FlySpeed = 50
+local TeleportCFrame
 
-window1:Button("Decompiler", function()
-	local Ok, Source = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/taze292/taze-decompiler/v0.2.0/tools/Decompile.luau")
-	if not Ok or type(Source) ~= "string" then return end
+local function LoadScript(Url)
+	local Success, Error = pcall(function()
+		local Chunk, CompileError = loadstring(game:HttpGet(Url))
+		if not Chunk then error(CompileError, 0) end
 
-	local Chunk = loadstring(Source)
+		Chunk()
+	end)
 
-	if type(Chunk) ~= "function" then return end
-	pcall(Chunk)
-end)
+	if not Success then warn(Error) end
+	return Success
+end
 
-window1:Button("Infinite Yield", function()
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-end)
+local function ToCFrame(Input)
+	local InputType = typeof(Input)
 
-window1:Button("RemoteSpy 1", function()
-	local owner = "Upbolt"
-	local branch = "revision"
+	if InputType == "CFrame" then
+		return Input
+	elseif InputType == "Vector3" then
+		return CFrame.new(Input)
+	elseif InputType == "string" then
+		local Kind, Coordinates = Input:match("^%s*(%w+)%.new%((.-)%)%s*$")
+		if Kind and Kind ~= "CFrame" and Kind ~= "Vector3" then return end
 
-	local function webImport(file)
-		return loadstring(game:HttpGetAsync(("https://raw.githubusercontent.com/%s/Hydroxide/%s/%s.lua"):format(owner, branch, file)), file .. '.lua')()
+		local X, Y, Z = (Coordinates or Input):match("^%s*([^,]+),%s*([^,]+),%s*([^,]+)%s*$")
+
+		X, Y, Z = tonumber(X), tonumber(Y), tonumber(Z)
+		if not X or not Y or not Z then return end
+
+		return CFrame.new(X, Y, Z)
+	elseif InputType == "Instance" then
+		if Input:IsA("BasePart") then
+			return Input.CFrame
+		elseif Input:IsA("Model") then
+			local HumanoidRootPart = Input:FindFirstChild("HumanoidRootPart")
+
+			return HumanoidRootPart and HumanoidRootPart.CFrame or Input:GetPivot()
+		end
 	end
+end
 
-	webImport("init")
-	webImport("ui/main")
+ToolsWindow:Button("Decompiler", function()
+	LoadScript("https://raw.githubusercontent.com/taze292/taze-decompiler/v0.2.0/tools/Decompile.luau")
 end)
 
-window1:Button("RemoteSpy 2", function()
-	loadstring(game:HttpGet("https://gitlab.com/upio/cobalt/-/releases/permalink/latest/downloads/Cobalt.luau"))()
+ToolsWindow:Button("Dex", function()
+	LoadScript("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua")
 end)
 
-window1:Button("Roblox Executor Mcp", function()
+ToolsWindow:Button("Infinite Yield", function()
+	LoadScript("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
+end)
+
+ToolsWindow:Button("RemoteSpy 1", function()
+	if not LoadScript("https://raw.githubusercontent.com/Upbolt/Hydroxide/revision/init.lua") then return end
+
+	LoadScript("https://raw.githubusercontent.com/Upbolt/Hydroxide/revision/ui/main.lua")
+end)
+
+ToolsWindow:Button("RemoteSpy 2", function()
+	LoadScript("https://gitlab.com/upio/cobalt/-/releases/permalink/latest/downloads/Cobalt.luau")
+end)
+
+ToolsWindow:Button("Roblox Executor Mcp", function()
+	if Bridge or getgenv().MCP_Loaded then return end
+	Bridge = true
+
 	while not getgenv().MCP_Loaded do
-		local bridgeUrl = getgenv().BridgeURL or "localhost:16384"
-		pcall(function() loadstring(game:HttpGet("http://" .. bridgeUrl .. "/script.luau"))() end)
+		local BridgeUrl = getgenv().BridgeURL or "localhost:16384"
+		pcall(function() loadstring(game:HttpGet("http://" .. BridgeUrl .. "/script.luau"))() end)
 
-		task.wait(0.15)
+		if not getgenv().MCP_Loaded then task.wait(0.15) end
+	end
+
+	Bridge = false
+end)
+
+MovementWindow:Button("Copy CFrame", function()
+	local HumanoidRootPart = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+	if not HumanoidRootPart then return end
+
+	local Position = HumanoidRootPart.Position
+	setclipboard(string.format("CFrame.new(%.1f, %.1f, %.1f)", Position.X, Position.Y, Position.Z))
+end)
+
+MovementWindow:Button("Teleport to CFrame", function()
+	if not TeleportCFrame then return end
+
+	local HumanoidRootPart = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+	if not HumanoidRootPart then return end
+
+	HumanoidRootPart.CFrame = TeleportCFrame
+end)
+
+MovementWindow:Box("CFrame", function(Input1)
+	TeleportCFrame = ToCFrame(Input1)
+end)
+
+local function StopFly()
+	local State = FlyState
+	FlyState = nil
+
+	if FlyToggle then FlyToggle:SetValue(false) end
+	if not State then return end
+
+	for Index, Connection in State.Connections do
+		Connection:Disconnect()
+	end
+
+	State.Gyro:Destroy()
+	State.Velocity:Destroy()
+
+	if State.Humanoid.Parent then
+		State.Humanoid.PlatformStand = State.PlatformStand
+	end
+end
+
+FlyToggle = MovementWindow:Toggle("Enabled Fly", false, function(Enabled)
+	StopFly()
+	if not Enabled then return end
+
+	local Character = Player.Character
+	local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+	local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+	if not RootPart or not Humanoid or Humanoid.Health <= 0 then return end
+
+	local Gyro = Instance.new("BodyGyro")
+	Gyro.P = 9e4
+	Gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	Gyro.CFrame = RootPart.CFrame
+	Gyro.Parent = RootPart
+
+	local Velocity = Instance.new("BodyVelocity")
+	Velocity.Velocity = Vector3.zero
+	Velocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	Velocity.Parent = RootPart
+
+	local Control = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+	local Keys = {
+		[Enum.KeyCode.W] = {"F", 1},
+		[Enum.KeyCode.S] = {"B", -1},
+		[Enum.KeyCode.A] = {"L", -1},
+		[Enum.KeyCode.D] = {"R", 1},
+		[Enum.KeyCode.E] = {"Q", 2},
+		[Enum.KeyCode.Q] = {"E", -2},
+	}
+
+	local State = {
+		Humanoid = Humanoid,
+		PlatformStand = Humanoid.PlatformStand,
+		Gyro = Gyro,
+		Velocity = Velocity,
+		Connections = {},
+	}
+
+	FlyState = State
+
+	FlyToggle:SetValue(true)
+
+	Humanoid.PlatformStand = true
+
+	State.Connections[1] = UserInputService.InputBegan:Connect(function(Input, Processed)
+		if Processed or UserInputService:GetFocusedTextBox() then return end
+
+		local Key = Keys[Input.KeyCode]
+		if Key then Control[Key[1]] = Key[2] end
+	end)
+
+	State.Connections[2] = UserInputService.InputEnded:Connect(function(Input)
+		local Key = Keys[Input.KeyCode]
+		if Key then Control[Key[1]] = 0 end
+	end)
+
+	State.Connections[3] = UserInputService.WindowFocusReleased:Connect(function()
+		for Key, Value in Control do Control[Key] = 0 end
+	end)
+
+	State.Connections[4] = Humanoid.Died:Connect(StopFly)
+	State.Connections[5] = Player.CharacterRemoving:Connect(function(RemovingCharacter)
+		if RemovingCharacter == Character then StopFly() end
+	end)
+
+	State.Connections[6] = RunService.RenderStepped:Connect(function()
+		if Player.Character ~= Character or not RootPart:IsDescendantOf(Character) or Humanoid.Health <= 0 then
+			StopFly()
+			return
+		end
+
+		local Camera = Workspace.CurrentCamera
+
+		if not Camera then
+			Velocity.Velocity = Vector3.zero
+			return
+		end
+
+		local Forward = Control.F + Control.B
+		local Side = Control.L + Control.R
+		local Vertical = Control.Q + Control.E
+
+		Humanoid.PlatformStand = true
+		Velocity.Velocity = (Camera.CFrame.LookVector * Forward
+			+ Camera.CFrame:VectorToWorldSpace(Vector3.new(Side, (Forward + Vertical) * 0.2, 0))) * FlySpeed
+		Gyro.CFrame = Camera.CFrame
+	end)
+end)
+
+MovementWindow:Slider("Fly Speed", 1, 200, FlySpeed, function(Value)
+	FlySpeed = Value
+end)
+
+FlyToggle.Destroying:Connect(function()
+	FlyToggle = nil
+	StopFly()
+end)
+
+ServerWindow:Button("Copy Game ID", function()
+	setclipboard(tostring(game.GameId))
+end)
+
+ServerWindow:Button("Copy Place ID", function()
+	setclipboard(tostring(game.PlaceId))
+end)
+
+ServerWindow:Button("Rejoin", function()
+	if #Players:GetPlayers() <= 1 then
+		Player:Kick("\nRejoining...")
+		task.wait(0.3)
+		TeleportService:Teleport(game.PlaceId, Player)
+	else
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Player)
 	end
 end)
 
-window2:Button("CFrame 1", function()
-	local rootpart = plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+ServerWindow:Button("Server Hop", function()
+	if ServerHopping then return end
+	ServerHopping = true
 
-	if rootpart then
-		local output1 = rootpart.CFrame
-		local output2 = string.format("CFrame.new(%.1f, %.1f, %.1f)", output1.Position.X, output1.Position.Y, output1.Position.Z)
+	local Success, Error = pcall(function()
+		local Response = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true"))
+		local Servers = {}
 
-		setclipboard(output2)
-	end
-end)
+		for Index, Server in Response.data do
+			if Server.playing >= Server.maxPlayers or Server.id == game.JobId then continue end
 
-window2:Box("CFrame 2", function(input1, input2)
-	if not input1 then return end
+			Servers[#Servers + 1] = Server.id
+		end
 
-	local x, y, z = string.match(input1, "CFrame%.new%(([%d%.%-]+),%s*([%d%.%-]+),%s*([%d%.%-]+)")
+		if #Servers == 0 then
+			warn("Server Hop: Couldn't find a server.")
+			return
+		end
 
-	if x and y and z then
-		plr.Character.HumanoidRootPart.CFrame = CFrame.new(tonumber(x), tonumber(y), tonumber(z))
-	end
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, Servers[math.random(1, #Servers)], Player)
+	end)
+
+	ServerHopping = false
+	if not Success then warn(Error) end
 end)
